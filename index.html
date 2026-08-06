@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>파티 편성 보드</title>
+<style>
+  :root{
+    --bg:#eef1ec;
+    --bg-elevated:#ffffff;
+    --bg-sunken:#e4e8e1;
+    --border:#cdd6cb;
+    --border-strong:#b7c2b4;
+    --text:#1b2420;
+    --text-muted:#5c6a5f;
+    --text-faint:#889086;
+    --accent:#2f7d6c;
+    --accent-soft:#dbe9e3;
+    --gold:#a8762a;
+    --gold-soft:#f1e3cd;
+    --danger:#b8453c;
+    --danger-soft:#f7dfdc;
+    --warning:#a9722a;
+    --warning-soft:#f2e3cd;
+    --job-0:#7457b0; --job-1:#b0405a; --job-2:#3567a6; --job-3:#b06a2a; --job-4:#2f8f6f;
+    --job-5:#2c9098; --job-6:#ab8a26; --job-7:#4a5a9e; --job-8:#6f8a2a;
+    --shadow:0 1px 2px rgba(20,30,25,.06),0 4px 14px rgba(20,30,25,.07);
+    --radius:10px;
+    --font-mono: ui-monospace,'Cascadia Mono','Consolas','SFMono-Regular',Menlo,monospace;
+    --font-kr:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10161c; --bg-elevated:#171f26; --bg-sunken:#0c1116;
+      --border:#2a333b; --border-strong:#3a4650;
+      --text:#e7ece8; --text-muted:#9aa6a0; --text-faint:#69746e;
+      --accent:#5fc4ac; --accent-soft:#1c3833;
+      --gold:#dab064; --gold-soft:#3a2f1c;
+      --danger:#e2766b; --danger-soft:#3a201d;
+      --warning:#dab064; --warning-soft:#382c1a;
+      --job-0:#a58ce0; --job-1:#e08098; --job-2:#7fa8dd; --job-3:#e0a267; --job-4:#5fcaa4;
+      --job-5:#5fc7cf; --job-6:#d9bd63; --job-7:#8b9be0; --job-8:#a3c15a;
+      --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 18px rgba(0,0,0,.4);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10161c; --bg-elevated:#171f26; --bg-sunken:#0c1116;
+    --border:#2a333b; --border-strong:#3a4650;
+    --text:#e7ece8; --text-muted:#9aa6a0; --text-faint:#69746e;
+    --accent:#5fc4ac; --accent-soft:#1c3833;
+    --gold:#dab064; --gold-soft:#3a2f1c;
+    --danger:#e2766b; --danger-soft:#3a201d;
+    --warning:#dab064; --warning-soft:#382c1a;
+    --job-0:#a58ce0; --job-1:#e08098; --job-2:#7fa8dd; --job-3:#e0a267; --job-4:#5fcaa4;
+    --job-5:#5fc7cf; --job-6:#d9bd63; --job-7:#8b9be0; --job-8:#a3c15a;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1ec; --bg-elevated:#ffffff; --bg-sunken:#e4e8e1;
+    --border:#cdd6cb; --border-strong:#b7c2b4;
+    --text:#1b2420; --text-muted:#5c6a5f; --text-faint:#889086;
+    --accent:#2f7d6c; --accent-soft:#dbe9e3;
+    --gold:#a8762a; --gold-soft:#f1e3cd;
+    --danger:#b8453c; --danger-soft:#f7dfdc;
+    --warning:#a9722a; --warning-soft:#f2e3cd;
+    --job-0:#7457b0; --job-1:#b0405a; --job-2:#3567a6; --job-3:#b06a2a; --job-4:#2f8f6f;
+    --job-5:#2c9098; --job-6:#ab8a26; --job-7:#4a5a9e; --job-8:#6f8a2a;
+    color-scheme: light;
+  }
+
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important;} }
+
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-kr);font-size:14.5px;line-height:1.55;}
+  ::selection{background:var(--accent-soft);}
+
+  .wrap{max-width:1440px;margin:0 auto;padding:22px 24px 60px;}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  header.top h1{font-family:var(--font-kr);font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0;text-wrap:balance;}
+  header.top .sub{color:var(--text-muted);font-size:13px;margin-top:4px;}
+  .titleblock{display:flex;flex-direction:column;}
+  .headctrls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .statrow{display:flex;gap:10px;flex-wrap:wrap;}
+  button.reset{border-color:var(--border-strong);color:var(--text-muted);white-space:nowrap;}
+  button.reset:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-soft);}
+  button.reset.armed{background:var(--danger);border-color:var(--danger);color:#fff;}
+  button.reset.armed:hover{filter:brightness(1.05);}
+  .stat{background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:7px 12px;display:flex;flex-direction:column;gap:1px;min-width:78px;box-shadow:var(--shadow);}
+  .stat .n{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:17px;font-weight:700;}
+  .stat .l{font-size:10.5px;color:var(--text-muted);letter-spacing:.03em;}
+  .stat.warn .n{color:var(--danger);}
+
+  .layout{display:grid;grid-template-columns:400px 1fr;gap:22px;align-items:start;}
+  @media (max-width:960px){ .layout{grid-template-columns:1fr;} }
+
+  section.panel{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;}
+  section.panel + section.panel{margin-top:16px;}
+  .panel h2{font-size:13px;font-weight:700;margin:0 0 10px;letter-spacing:.02em;color:var(--text);display:flex;align-items:center;gap:8px;}
+  .panel h2 .cnt{font-family:var(--font-mono);font-weight:600;font-size:11.5px;color:var(--text-muted);background:var(--bg-sunken);border-radius:20px;padding:2px 8px;}
+  .panel p.hint{color:var(--text-muted);font-size:12px;margin:0 0 10px;}
+
+  .sidebar-sticky{position:sticky;top:16px;display:flex;flex-direction:column;}
+
+  textarea.paste{width:100%;min-height:78px;resize:vertical;background:var(--bg-sunken);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-mono);font-size:12px;padding:8px 10px;}
+  textarea.paste:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .paste-row{display:flex;gap:8px;margin-top:8px;}
+  .paste-msg{font-size:11.5px;margin-top:6px;color:var(--text-muted);}
+  .paste-msg.err{color:var(--danger);}
+
+  button{font-family:var(--font-kr);cursor:pointer;border-radius:7px;border:1px solid var(--border-strong);background:var(--bg-elevated);color:var(--text);padding:7px 13px;font-size:13px;font-weight:600;transition:background .12s,border-color .12s,transform .06s;}
+  button:hover{border-color:var(--accent);}
+  button:active{transform:translateY(1px);}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  button.primary:hover{filter:brightness(1.06);}
+  button.primary:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+  button.ghost{background:transparent;border-color:transparent;color:var(--text-muted);padding:6px 8px;}
+  button.ghost:hover{color:var(--danger);border-color:transparent;background:var(--danger-soft);}
+  button.small{padding:4px 9px;font-size:12px;}
+  button:disabled{cursor:not-allowed;}
+
+  .jobtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;}
+  .jobtab{display:flex;align-items:center;gap:6px;justify-content:center;padding:7px 4px;border-radius:7px;border:1px solid var(--border);background:var(--bg-sunken);font-size:12px;font-weight:700;color:var(--text-muted);}
+  .jobtab .dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .jobtab.active{border-color:var(--accent);color:var(--text);background:var(--accent-soft);}
+  .jobtab .badge{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);}
+  .jobtab.active .badge{color:var(--accent);}
+
+  .addform{display:grid;grid-template-columns:1fr 74px 84px auto;gap:6px;margin-bottom:10px;}
+  .addform input,.addform select{font-family:var(--font-kr);font-size:12.5px;padding:6px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
+  .addform input:focus-visible,.addform select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .addform input[type=number]{font-family:var(--font-mono);}
+
+  table.roster{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.roster th{text-align:left;color:var(--text-faint);font-weight:600;font-size:10.5px;letter-spacing:.03em;padding:4px 6px;border-bottom:1px solid var(--border);}
+  table.roster td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  table.roster tr:last-child td{border-bottom:none;}
+  table.roster td.pw{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--gold);}
+  .typepill{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:var(--bg-sunken);color:var(--text-muted);border:1px solid var(--border);}
+  .rostwrap{max-height:260px;overflow-y:auto;overflow-x:auto;}
+  .jobdot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex:none;}
+  .empty-note{color:var(--text-faint);font-size:12px;padding:14px 4px;text-align:center;}
+
+  .toggle-all{background:transparent;border:none;color:var(--accent);font-size:12px;font-weight:700;padding:0;margin-bottom:8px;}
+
+  .exclude-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin:10px 0;}
+  .excand{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg-sunken);font-size:12.5px;}
+  .excand.checked{border-color:var(--danger);background:var(--danger-soft);}
+  .excand input{accent-color:var(--danger);}
+  .excand .nm{font-weight:700;flex:1;}
+  .excand .jb{color:var(--text-muted);font-size:11px;}
+  .excand .pw{font-family:var(--font-mono);color:var(--gold);font-variant-numeric:tabular-nums;}
+  .exclude-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;}
+  .exclude-counter{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);}
+  .exclude-counter b{color:var(--text);}
+  .confirmed-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--danger-soft);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12.5px;}
+
+  .warnbox{background:var(--warning-soft);border:1px solid var(--warning);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;color:var(--text);}
+  .warnbox b{color:var(--warning);}
+  .warnbox ul{margin:6px 0 0;padding-left:18px;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;font-size:11.5px;color:var(--text-muted);}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:14px;}
+  .pcard{border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-elevated);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;}
+  .pcard .phead{padding:10px 12px 8px;border-bottom:1px solid var(--border);}
+  .phead-top{display:flex;justify-content:space-between;align-items:baseline;}
+  .phead-top .pname{font-family:var(--font-mono);font-weight:800;font-size:13px;letter-spacing:.02em;}
+  .phead-top .ptotal{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:800;color:var(--gold);font-size:14px;}
+  .pdelta{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);text-align:right;}
+  .pdelta.hi{color:var(--danger);}
+  .pbar-track{height:5px;border-radius:3px;background:var(--bg-sunken);margin-top:7px;overflow:hidden;}
+  .pbar-fill{height:100%;background:var(--accent);border-radius:3px;}
+  .chips{display:flex;gap:6px;margin-top:8px;}
+  .chip{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid var(--border);color:var(--text-muted);}
+  .chip.ok{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .chip.bad{border-color:var(--danger);color:var(--danger);background:var(--danger-soft);}
+  .members{list-style:none;margin:0;padding:6px 8px 10px;display:flex;flex-direction:column;gap:2px;flex:1;}
+  .member{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:6px;border:1px solid transparent;font-size:12px;}
+  .member.editable{cursor:grab;}
+  .member.editable:hover{background:var(--bg-sunken);}
+  .member.sel{border-color:var(--accent);background:var(--accent-soft);}
+  .member.dragging{opacity:.35;}
+  .member.drop-target{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent);}
+  .member .nm{font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .member .jb{font-size:10px;color:var(--text-muted);width:38px;flex:none;}
+  .member .pw{font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--gold);width:44px;text-align:right;flex:none;}
+  .member .typepill{width:26px;text-align:center;flex:none;font-size:9px;padding:1px 0;}
+
+  .gen-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+  .swaphint{font-size:12px;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .swaphint b{color:var(--accent);}
+  button.editbtn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  footer.tip{margin-top:26px;color:var(--text-faint);font-size:11.5px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="titleblock">
+      <h1>파티 편성 보드</h1>
+      <div class="sub">직업별 캐릭터를 입력하면 전투력 균형을 맞춰 10인 파티로 자동 편성합니다.</div>
+    </div>
+    <div class="headctrls">
+      <div class="statrow" id="statrow"></div>
+      <button id="reclassifyBtn" class="small">전투력 기준 재분류</button>
+      <button id="resetBtn" class="reset"></button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="sidebar-sticky">
+      <section class="panel">
+        <h2>빠른 붙여넣기</h2>
+        <p class="hint">한 줄에 한 캐릭터, <b>직업,닉네임,전투력</b> 순서 (쉼표 또는 탭 구분)<br>종류(본캐/부캐/배럭)는 전투력 기준으로 자동 판정됩니다: 700↑ 본캐 · 301~699 부캐 · 300↓ 배럭<br>예: 살성,쫄깃,540</p>
+        <textarea class="paste" id="pasteBox" placeholder="살성,쫄깃,540&#10;권성,역마,450&#10;치유성,라공,280"></textarea>
+        <div class="paste-row">
+          <button class="primary" id="pasteBtn">일괄 추가</button>
+          <button class="small" id="pasteClearBtn">지우기</button>
+        </div>
+        <div class="paste-msg" id="pasteMsg"></div>
+      </section>
+
+      <section class="panel">
+        <h2>직업별 입력</h2>
+        <div class="jobtabs" id="jobTabs"></div>
+        <div class="addform" id="addForm">
+          <input type="text" id="inName" placeholder="닉네임" />
+          <select id="inType"></select>
+          <input type="number" id="inPower" placeholder="전투력" min="1" />
+          <button class="primary small" id="addBtn">추가</button>
+        </div>
+        <p class="hint" style="margin-top:-4px">전투력 입력 시 종류가 자동 제안됩니다(700↑ 본캐 · 301~699 부캐 · 300↓ 배럭) — 필요하면 직접 바꾸세요.</p>
+        <div class="rostwrap">
+          <table class="roster" id="jobRoster"></table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <button class="toggle-all" id="toggleAllBtn">전체 명단 보기 ▾</button>
+        <div class="rostwrap" id="allRosterWrap" style="display:none;"></div>
+      </section>
+    </div>
+
+    <div id="mainCol"></div>
+  </div>
+
+  <footer class="tip">데이터는 이 브라우저에 자동 저장됩니다.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var JOBS = [
+    {key:'마도성', v:'--job-0'}, {key:'살성', v:'--job-1'}, {key:'검성', v:'--job-2'},
+    {key:'권성', v:'--job-3'}, {key:'치유성', v:'--job-4'}, {key:'정령성', v:'--job-5'},
+    {key:'호법성', v:'--job-6'}, {key:'수호성', v:'--job-7'}, {key:'궁성', v:'--job-8'}
+  ];
+  var JOBKEYS = JOBS.map(function(j){return j.key;});
+  var TYPES = ['본캐','부캐','배럭'];
+  var TYPE_ORDER = {'본캐':0,'부캐':1,'배럭':2};
+  var STORE_KEY = 'party-board-v1';
+
+  var state = {
+    characters: [],
+    excludedIds: [],
+    excludeConfirmed: false,
+    shortlist: [],
+    activeJob: JOBS[0].key,
+    parties: null,
+    warnings: [],
+    selected: null,
+    showAllRoster: false,
+    resetArmed: false,
+    editMode: false
+  };
+  var nextId = 1;
+  var resetTimer = null;
+
+  function jobColor(job){
+    var j = JOBS.find(function(x){return x.key===job;});
+    return j ? 'var('+j.v+')' : 'var(--text-muted)';
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(!raw) return;
+      var data = JSON.parse(raw);
+      state.characters = data.characters || [];
+      state.excludedIds = data.excludedIds || [];
+      state.excludeConfirmed = !!data.excludeConfirmed;
+      state.parties = data.parties || null;
+      state.warnings = data.warnings || [];
+      nextId = data.nextId || (state.characters.reduce(function(m,c){return Math.max(m,c.id);},0)+1);
+    }catch(e){}
+  }
+  function save(){
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        characters: state.characters, excludedIds: state.excludedIds,
+        excludeConfirmed: state.excludeConfirmed, parties: state.parties,
+        warnings: state.warnings, nextId: nextId
+      }));
+    }catch(e){}
+  }
+
+  function totalCount(){ return state.characters.length; }
+  function excessCount(){ return totalCount() % 10; }
+  function partyN(){ return Math.floor(totalCount()/10); }
+
+  function invalidateParties(){
+    state.parties = null;
+    state.warnings = [];
+  }
+
+  function cleanExcluded(){
+    var ids = state.characters.map(function(c){return c.id;});
+    state.excludedIds = state.excludedIds.filter(function(id){return ids.indexOf(id)>-1;});
+    var ex = excessCount();
+    if(ex===0){
+      state.excludedIds = [];
+    } else if(state.excludedIds.length !== ex){
+      state.excludeConfirmed = false;
+    }
+  }
+
+  var TYPE_THRESH = { mainMin: 700, subMin: 301 };
+  function deriveType(power){
+    if(power >= TYPE_THRESH.mainMin) return '본캐';
+    if(power >= TYPE_THRESH.subMin) return '부캐';
+    return '배럭';
+  }
+  function reclassifyAll(){
+    state.characters.forEach(function(c){ c.type = deriveType(c.power); });
+    invalidateParties();
+    cleanExcluded();
+    render(); save();
+  }
+
+  // ---------- reset ----------
+  function renderResetBtn(){
+    var btn = document.getElementById('resetBtn');
+    if(!btn) return;
+    btn.textContent = state.resetArmed ? '정말 초기화? (다시 클릭)' : '전체 초기화';
+    btn.className = 'reset' + (state.resetArmed ? ' armed' : '');
+  }
+  function requestReset(){
+    if(!state.characters.length && !state.parties){ return; }
+    if(!state.resetArmed){
+      state.resetArmed = true;
+      renderResetBtn();
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(function(){ state.resetArmed = false; renderResetBtn(); }, 4000);
+    } else {
+      clearTimeout(resetTimer);
+      state.resetArmed = false;
+      doReset();
+    }
+  }
+  function doReset(){
+    state.characters = [];
+    state.excludedIds = [];
+    state.excludeConfirmed = false;
+    state.shortlist = [];
+    state.parties = null;
+    state.warnings = [];
+    state.selected = null;
+    state.activeJob = JOBS[0].key;
+    state.showAllRoster = false;
+    nextId = 1;
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    render(); save();
+  }
+
+  // ---------- mutation ----------
+  function addCharacter(job, name, type, power){
+    name = (name||'').trim();
+    if(!name || !power || power<=0) return false;
+    state.characters.push({id: nextId++, job: job, name: name, type: type, power: Math.round(power)});
+    invalidateParties();
+    cleanExcluded();
+    render(); save();
+    return true;
+  }
+  function removeCharacter(id){
+    state.characters = state.characters.filter(function(c){return c.id!==id;});
+    invalidateParties();
+    cleanExcluded();
+    render(); save();
+  }
+  function bulkAdd(text){
+    var lines = text.split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean);
+    var added=0, errs=[];
+    lines.forEach(function(line, i){
+      var parts = line.split(/[,\t]+/).map(function(s){return s.trim();});
+      if(parts.length<3){ parts = line.split(/\s+/).map(function(s){return s.trim();}); }
+      if(parts.length<3){ errs.push((i+1)+'행: 형식 오류'); return; }
+      var job=parts[0], name=parts[1];
+      var power = parseInt(parts.length>=4 ? parts[3] : parts[2], 10);
+      if(JOBKEYS.indexOf(job)===-1){ errs.push((i+1)+'행: 알 수 없는 직업 "'+job+'"'); return; }
+      if(!name || !power || power<=0){ errs.push((i+1)+'행: 닉네임/전투력 오류'); return; }
+      state.characters.push({id: nextId++, job:job, name:name, type:deriveType(power), power:Math.round(power)});
+      added++;
+    });
+    invalidateParties();
+    cleanExcluded();
+    var msg = added+'명 추가됨';
+    if(errs.length) msg += ' · '+errs.length+'건 오류 ('+errs.slice(0,3).join(', ')+(errs.length>3?' 외':'')+')';
+    save();
+    return {added:added, errs:errs, msg:msg};
+  }
+
+  // ---------- exclusion ----------
+  function candidatePool(){
+    return state.characters.filter(function(c){return c.type==='부캐' && c.job!=='치유성';});
+  }
+  function refreshShortlist(){
+    var pool = candidatePool().slice().sort(function(a,b){return b.power-a.power;});
+    var n = Math.max(excessCount()*5, 15);
+    pool = pool.slice(0, Math.min(pool.length, n));
+    for(var i=pool.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=pool[i]; pool[i]=pool[j]; pool[j]=t;
+    }
+    state.shortlist = pool.map(function(c){return c.id;});
+  }
+  function toggleExclude(id){
+    var idx = state.excludedIds.indexOf(id);
+    if(idx>-1){ state.excludedIds.splice(idx,1); }
+    else if(state.excludedIds.length < excessCount()){ state.excludedIds.push(id); }
+    render(); save();
+  }
+  function randomAutoPick(){
+    var excess = excessCount();
+    var pool = state.shortlist.slice();
+    if(pool.length < excess) pool = candidatePool().map(function(c){return c.id;});
+    for(var i=pool.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=pool[i]; pool[i]=pool[j]; pool[j]=t;
+    }
+    state.excludedIds = pool.slice(0, excess);
+    render(); save();
+  }
+  function confirmExclusion(){
+    if(state.excludedIds.length !== excessCount()) return;
+    state.excludeConfirmed = true;
+    invalidateParties();
+    render(); save();
+  }
+  function reopenExclusion(){
+    state.excludeConfirmed = false;
+    invalidateParties();
+    render(); save();
+  }
+
+  // ---------- party generation ----------
+  function shuffledSortDesc(arr){
+    return arr.slice().sort(function(a,b){ return (b.power-a.power) || (Math.random()-0.5); });
+  }
+  function totalPower(p){ return p.members.reduce(function(s,c){return s+c.power;},0); }
+  function healerCountOf(p){ return p.members.filter(function(c){return c.job==='치유성';}).length; }
+
+  function generateParties(){
+    var pool = state.characters.filter(function(c){return state.excludedIds.indexOf(c.id)===-1;});
+    var N = Math.floor(pool.length/10);
+    if(N<=0 || pool.length % 10 !== 0){
+      state.parties=null; state.warnings=['10명 단위로 정확히 나누어떨어지지 않습니다. 제외 인원을 다시 확인해주세요.'];
+      render(); save(); return;
+    }
+    var parties = [];
+    for(var i=0;i<N;i++) parties.push({idx:i, members:[]});
+    var warnings = [];
+    var healers = pool.filter(function(c){return c.job==='치유성';});
+    var others = pool.filter(function(c){return c.job!=='치유성';});
+    var H = healers.length;
+
+    if(H > 2*N){
+      warnings.push('치유성 인원('+H+'명)이 파티 최대 허용치('+(2*N)+'명)를 초과했습니다. 치유성 일부를 제외 대상에 포함해주세요.');
+    }
+    var healersSorted = shuffledSortDesc(healers);
+    for(var i2=0;i2<Math.min(N,H);i2++){
+      var c = healersSorted[i2];
+      var eligible = parties.filter(function(p){return healerCountOf(p)<1;});
+      eligible.sort(function(a,b){return totalPower(a)-totalPower(b);});
+      eligible[0].members.push(c);
+    }
+    if(H<N){
+      var lacking = parties.filter(function(p){return healerCountOf(p)<1;}).map(function(p){return p.idx+1;});
+      warnings.push('치유성이 부족하여 '+lacking.join(', ')+'번 파티에 치유성이 배정되지 않았습니다.');
+    }
+    for(var i3=N;i3<Math.min(2*N,H);i3++){
+      var c2 = healersSorted[i3];
+      var eligible2 = parties.filter(function(p){return healerCountOf(p)<2;});
+      if(eligible2.length===0) break;
+      eligible2.sort(function(a,b){return totalPower(a)-totalPower(b);});
+      eligible2[0].members.push(c2);
+    }
+    for(var i4=2*N;i4<H;i4++){
+      var c3 = healersSorted[i4];
+      var eligible3 = parties.filter(function(p){return p.members.length<10;});
+      if(eligible3.length===0){ warnings.push('배정 실패: '+c3.name+' (치유성, 전투력 '+c3.power+') — 모든 파티가 가득 찼습니다.'); continue; }
+      eligible3.sort(function(a,b){return totalPower(a)-totalPower(b);});
+      eligible3[0].members.push(c3);
+    }
+
+    var othersSorted = shuffledSortDesc(others);
+    othersSorted.forEach(function(c){
+      var eligible = parties.filter(function(p){
+        return p.members.length<10 && !p.members.some(function(m){return m.job===c.job;});
+      });
+      if(eligible.length===0){
+        eligible = parties.filter(function(p){return p.members.length<10;});
+      }
+      if(eligible.length===0){
+        warnings.push('배정 실패: '+c.name+' ('+c.job+', 전투력 '+c.power+') — 모든 파티가 가득 찼습니다.');
+        return;
+      }
+      eligible.sort(function(a,b){return totalPower(a)-totalPower(b);});
+      eligible[0].members.push(c);
+    });
+
+    parties.forEach(function(p){
+      p.members.sort(function(a,b){
+        return (TYPE_ORDER[a.type]-TYPE_ORDER[b.type]) || (b.power-a.power);
+      });
+    });
+
+    state.parties = parties;
+    state.warnings = warnings;
+    state.selected = null;
+    render(); save();
+  }
+
+  function performSwap(aId, bId){
+    if(aId===bId) return;
+    var aParty=null, aIdx=-1, bParty=null, bIdx=-1;
+    state.parties.forEach(function(p){
+      p.members.forEach(function(m,idx){
+        if(m.id===aId){ aParty=p; aIdx=idx; }
+        if(m.id===bId){ bParty=p; bIdx=idx; }
+      });
+    });
+    if(aParty && bParty){
+      var tmp = aParty.members[aIdx];
+      aParty.members[aIdx] = bParty.members[bIdx];
+      bParty.members[bIdx] = tmp;
+    }
+    state.selected = null;
+    render(); save();
+  }
+  function swapMembers(charId){
+    if(!state.editMode) return;
+    if(state.selected===null){ state.selected = charId; render(); return; }
+    if(state.selected===charId){ state.selected = null; render(); return; }
+    performSwap(state.selected, charId);
+  }
+  function toggleEditMode(){
+    state.editMode = !state.editMode;
+    state.selected = null;
+    render();
+  }
+
+  // ---------- rendering ----------
+  function el(tag, attrs, children){
+    var e = document.createElement(tag);
+    if(attrs) Object.keys(attrs).forEach(function(k){
+      var v = attrs[k];
+      if(v===null || v===undefined) return;
+      if(k==='class') e.className = v;
+      else if(k==='html') e.innerHTML = v;
+      else if(k.indexOf('on')===0) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v);
+    });
+    (children||[]).forEach(function(c){ if(c) e.appendChild(c); });
+    return e;
+  }
+  function txt(s){ return document.createTextNode(s); }
+
+  function renderStats(){
+    var row = document.getElementById('statrow');
+    row.innerHTML='';
+    var total = totalCount(), N = partyN(), ex = excessCount();
+    function stat(label, val, warn){
+      return el('div',{class:'stat'+(warn?' warn':'')},[
+        el('div',{class:'n'},[txt(String(val))]),
+        el('div',{class:'l'},[txt(label)])
+      ]);
+    }
+    row.appendChild(stat('총 캐릭터', total));
+    row.appendChild(stat('편성 파티 수', N));
+    row.appendChild(stat('제외 필요', ex, ex>0 && !state.excludeConfirmed));
+  }
+
+  function renderJobTabs(){
+    var wrap = document.getElementById('jobTabs');
+    wrap.innerHTML='';
+    JOBS.forEach(function(j){
+      var count = state.characters.filter(function(c){return c.job===j.key;}).length;
+      var tab = el('div',{class:'jobtab'+(state.activeJob===j.key?' active':''), onclick:function(){ state.activeJob=j.key; render(); }},[
+        el('span',{class:'dot', style:'background:'+jobColor(j.key)}),
+        txt(j.key),
+        el('span',{class:'badge'},[txt(String(count))])
+      ]);
+      wrap.appendChild(tab);
+    });
+  }
+
+  function renderAddForm(){
+    var typeSel = document.getElementById('inType');
+    typeSel.innerHTML='';
+    TYPES.forEach(function(t){ typeSel.appendChild(el('option',{value:t},[txt(t)])); });
+  }
+
+  function renderJobRoster(){
+    var table = document.getElementById('jobRoster');
+    table.innerHTML='';
+    var list = state.characters.filter(function(c){return c.job===state.activeJob;});
+    if(list.length===0){
+      table.appendChild(el('tr',{},[el('td',{colspan:'4'},[el('div',{class:'empty-note'},[txt('아직 등록된 '+state.activeJob+' 캐릭터가 없습니다.')])])]));
+      return;
+    }
+    var thead = el('tr',{},[
+      el('th',{},[txt('닉네임')]), el('th',{},[txt('종류')]), el('th',{style:'text-align:right'},[txt('전투력')]), el('th',{})
+    ]);
+    table.appendChild(thead);
+    list.sort(function(a,b){return b.power-a.power;}).forEach(function(c){
+      var row = el('tr',{},[
+        el('td',{},[txt(c.name)]),
+        el('td',{},[el('span',{class:'typepill'},[txt(c.type)])]),
+        el('td',{class:'pw'},[txt(c.power.toLocaleString())]),
+        el('td',{},[el('button',{class:'ghost small', title:'삭제', onclick:function(){ removeCharacter(c.id); }},[txt('삭제')])])
+      ]);
+      table.appendChild(row);
+    });
+  }
+
+  function renderAllRoster(){
+    var wrap = document.getElementById('allRosterWrap');
+    var btn = document.getElementById('toggleAllBtn');
+    btn.textContent = '전체 명단 보기 ' + (state.showAllRoster?'▴':'▾');
+    wrap.style.display = state.showAllRoster ? 'block' : 'none';
+    if(!state.showAllRoster) return;
+    wrap.innerHTML='';
+    var table = el('table',{class:'roster'});
+    table.appendChild(el('tr',{},[
+      el('th',{},[txt('직업')]), el('th',{},[txt('닉네임')]), el('th',{},[txt('종류')]), el('th',{style:'text-align:right'},[txt('전투력')]), el('th',{})
+    ]));
+    if(state.characters.length===0){
+      table.appendChild(el('tr',{},[el('td',{colspan:'5'},[el('div',{class:'empty-note'},[txt('등록된 캐릭터가 없습니다.')])])]));
+    }
+    state.characters.slice().sort(function(a,b){ return JOBKEYS.indexOf(a.job)-JOBKEYS.indexOf(b.job) || b.power-a.power; })
+    .forEach(function(c){
+      table.appendChild(el('tr',{},[
+        el('td',{},[el('span',{class:'jobdot', style:'background:'+jobColor(c.job)}), txt(c.job)]),
+        el('td',{},[txt(c.name)]),
+        el('td',{},[el('span',{class:'typepill'},[txt(c.type)])]),
+        el('td',{class:'pw'},[txt(c.power.toLocaleString())]),
+        el('td',{},[el('button',{class:'ghost small', onclick:function(){ removeCharacter(c.id); }},[txt('삭제')])])
+      ]));
+    });
+    wrap.appendChild(table);
+  }
+
+  function renderMain(){
+    var main = document.getElementById('mainCol');
+    main.innerHTML='';
+    var ex = excessCount();
+
+    if(state.warnings && state.warnings.length){
+      var wb = el('div',{class:'warnbox'},[
+        el('b',{},[txt('확인 필요')]),
+        el('ul',{}, state.warnings.map(function(w){ return el('li',{},[txt(w)]); }))
+      ]);
+      main.appendChild(wb);
+    }
+
+    // exclusion panel
+    if(ex>0){
+      var panel = el('section',{class:'panel'});
+      panel.appendChild(el('h2',{},[txt('제외 인원 선택'), el('span',{class:'cnt'},[txt(state.excludedIds.length+' / '+ex)])]));
+      if(state.excludeConfirmed){
+        panel.appendChild(el('div',{class:'confirmed-row'},[
+          el('div',{},[txt(ex+'명 제외 확정됨')]),
+          el('button',{class:'small', onclick:reopenExclusion},[txt('변경하기')])
+        ]));
+      } else {
+        panel.appendChild(el('p',{class:'hint'},[txt('부캐 중 전투력이 상대적으로 높은 캐릭터 후보입니다. '+ex+'명을 직접 선택해 확정하세요.')]));
+        if(state.shortlist.length===0) refreshShortlist();
+        var list = el('div',{class:'exclude-list'});
+        var candMap = {};
+        state.characters.forEach(function(c){ candMap[c.id]=c; });
+        state.shortlist.forEach(function(id){
+          var c = candMap[id];
+          if(!c) return;
+          var checked = state.excludedIds.indexOf(id)>-1;
+          var disabled = !checked && state.excludedIds.length>=ex;
+          var row = el('label',{class:'excand'+(checked?' checked':'')},[
+            el('input',{type:'checkbox', checked: checked?'checked':null, disabled: disabled?'disabled':null, onchange:function(){ toggleExclude(id); }}),
+            el('span',{class:'nm'},[txt(c.name)]),
+            el('span',{class:'jb'},[txt(c.job)]),
+            el('span',{class:'pw'},[txt(c.power.toLocaleString())])
+          ]);
+          if(disabled) row.querySelector('input').checked=false;
+          list.appendChild(row);
+        });
+        panel.appendChild(list);
+        panel.appendChild(el('div',{class:'exclude-actions'},[
+          el('span',{class:'exclude-counter'},[txt('선택됨 '), el('b',{},[txt(String(state.excludedIds.length))]), txt(' / '+ex)]),
+          el('button',{class:'small', onclick:function(){ refreshShortlist(); render(); }},[txt('후보 새로고침')]),
+          el('button',{class:'small', onclick:randomAutoPick},[txt('무작위 추천')]),
+          el('button',{class:'primary small', disabled: state.excludedIds.length!==ex ? 'disabled':null, onclick:confirmExclusion},[txt('확정')])
+        ]));
+      }
+      main.appendChild(panel);
+    }
+
+    var canGenerate = (ex===0) || state.excludeConfirmed;
+    var genSection = el('section',{class:'panel'});
+    genSection.appendChild(el('div',{class:'gen-actions'},[
+      el('button',{class:'primary', disabled: (!canGenerate || partyN()<1) ? 'disabled':null, onclick:generateParties},[txt(state.parties ? '다시 생성' : '파티 자동 생성')]),
+      partyN()<1 ? el('span',{class:'exclude-counter'},[txt('10명 이상 입력해야 파티를 만들 수 있습니다.')]) : null
+    ]));
+
+    if(state.parties && state.parties.length){
+      var hint = state.editMode
+        ? el('span',{},[txt('캐릭터를 '), el('b',{},[txt('드래그해서')]), txt(' 다른 캐릭터 위에 놓으면 두 자리가 맞바뀝니다. (클릭 후 다른 캐릭터 클릭도 가능)')])
+        : el('span',{},[txt('직접수정을 켜면 드래그 앤 드롭으로 파티 배정을 조정할 수 있습니다.')]);
+      genSection.appendChild(el('div',{class:'swaphint'},[
+        el('button',{class:'small editbtn'+(state.editMode?' active':''), onclick:toggleEditMode},[txt(state.editMode?'직접수정 끄기':'직접수정')]),
+        hint
+      ]));
+      var legend = el('div',{class:'legend'});
+      JOBS.forEach(function(j){
+        legend.appendChild(el('span',{},[el('span',{class:'jobdot', style:'background:'+jobColor(j.key)}), txt(j.key)]));
+      });
+      genSection.appendChild(legend);
+
+      var totals = state.parties.map(totalPower);
+      var maxT = Math.max.apply(null, totals);
+      var avgT = totals.reduce(function(a,b){return a+b;},0)/totals.length;
+
+      var board = el('div',{class:'board'});
+      state.parties.forEach(function(p, pi){
+        var hc = healerCountOf(p);
+        var tp = totals[pi];
+        var diff = Math.round(tp-avgT);
+        var diffTxt = (diff>=0?'+':'')+diff.toLocaleString();
+        var card = el('div',{class:'pcard'});
+        var head = el('div',{class:'phead'});
+        head.appendChild(el('div',{class:'phead-top'},[
+          el('div',{class:'pname'},[txt('PARTY '+String(pi+1).padStart(2,'0'))]),
+          el('div',{class:'ptotal'},[txt(tp.toLocaleString())])
+        ]));
+        head.appendChild(el('div',{class:'pdelta'+(Math.abs(diff)>avgT*0.15?' hi':'')},[txt('평균 대비 '+diffTxt)]));
+        head.appendChild(el('div',{class:'pbar-track'},[el('div',{class:'pbar-fill', style:'width:'+(maxT?(tp/maxT*100):0)+'%'})]));
+        head.appendChild(el('div',{class:'chips'},[
+          el('span',{class:'chip'+(hc>=1&&hc<=2?' ok':' bad')},[txt('치유성 '+hc+'명')]),
+          el('span',{class:'chip'},[txt(p.members.length+'/10')])
+        ]));
+        card.appendChild(head);
+        var ul = el('ul',{class:'members'});
+        p.members.forEach(function(m){
+          var li = el('li',{
+            class:'member'+(state.selected===m.id?' sel':'')+(state.editMode?' editable':''),
+            draggable: state.editMode ? 'true' : null,
+            onclick:function(){ swapMembers(m.id); },
+            ondragstart:function(e){
+              if(!state.editMode){ e.preventDefault(); return; }
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/plain', String(m.id));
+              e.currentTarget.classList.add('dragging');
+            },
+            ondragend:function(e){
+              e.currentTarget.classList.remove('dragging');
+              document.querySelectorAll('.member.drop-target').forEach(function(x){ x.classList.remove('drop-target'); });
+            },
+            ondragover:function(e){
+              if(!state.editMode) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              e.currentTarget.classList.add('drop-target');
+            },
+            ondragleave:function(e){ e.currentTarget.classList.remove('drop-target'); },
+            ondrop:function(e){
+              if(!state.editMode) return;
+              e.preventDefault();
+              e.currentTarget.classList.remove('drop-target');
+              var srcId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+              if(srcId) performSwap(srcId, m.id);
+            }
+          },[
+            el('span',{class:'jobdot', style:'background:'+jobColor(m.job)}),
+            el('span',{class:'nm'},[txt(m.name)]),
+            el('span',{class:'typepill'},[txt(m.type[0])]),
+            el('span',{class:'jb'},[txt(m.job.slice(0,2))]),
+            el('span',{class:'pw'},[txt(m.power.toLocaleString())])
+          ]);
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+        board.appendChild(card);
+      });
+      genSection.appendChild(board);
+    }
+    main.appendChild(genSection);
+  }
+
+  function render(){
+    renderStats();
+    renderResetBtn();
+    renderJobTabs();
+    renderAddForm();
+    renderJobRoster();
+    renderAllRoster();
+    renderMain();
+  }
+
+  // ---------- events ----------
+  document.getElementById('addBtn').addEventListener('click', function(){
+    var name = document.getElementById('inName').value;
+    var type = document.getElementById('inType').value;
+    var power = parseFloat(document.getElementById('inPower').value);
+    if(addCharacter(state.activeJob, name, type, power)){
+      document.getElementById('inName').value='';
+      document.getElementById('inPower').value='';
+      document.getElementById('inName').focus();
+    }
+  });
+  document.getElementById('inPower').addEventListener('keydown', function(e){
+    if(e.key==='Enter') document.getElementById('addBtn').click();
+  });
+  document.getElementById('inPower').addEventListener('input', function(e){
+    var power = parseFloat(e.target.value);
+    if(power>0) document.getElementById('inType').value = deriveType(power);
+  });
+  document.getElementById('reclassifyBtn').addEventListener('click', reclassifyAll);
+  document.getElementById('inName').addEventListener('keydown', function(e){
+    if(e.key==='Enter') document.getElementById('addBtn').click();
+  });
+  document.getElementById('pasteBtn').addEventListener('click', function(){
+    var text = document.getElementById('pasteBox').value;
+    if(!text.trim()) return;
+    var res = bulkAdd(text);
+    var msgEl = document.getElementById('pasteMsg');
+    msgEl.textContent = res.msg;
+    msgEl.className = 'paste-msg'+(res.errs.length?' err':'');
+    if(res.added>0) document.getElementById('pasteBox').value='';
+    render();
+  });
+  document.getElementById('pasteClearBtn').addEventListener('click', function(){
+    document.getElementById('pasteBox').value='';
+    document.getElementById('pasteMsg').textContent='';
+  });
+  document.getElementById('toggleAllBtn').addEventListener('click', function(){
+    state.showAllRoster = !state.showAllRoster;
+    render();
+  });
+  document.getElementById('resetBtn').addEventListener('click', requestReset);
+
+  load();
+  cleanExcluded();
+  render();
+})();
+</script>
+</body>
+</html>
