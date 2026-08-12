@@ -134,6 +134,14 @@
   .addform input:focus-visible,.addform select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
   .addform input[type=number]{font-family:var(--font-mono);}
 
+  input.person-name{font-family:var(--font-kr);font-size:13px;font-weight:700;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;margin-bottom:10px;}
+  input.person-name:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .person-row{display:grid;grid-template-columns:1fr 84px 74px auto;gap:6px;margin-bottom:6px;align-items:center;}
+  .person-row select,.person-row input{font-family:var(--font-kr);font-size:12.5px;padding:6px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
+  .person-row input[type=number]{font-family:var(--font-mono);}
+  .person-actions{display:flex;gap:8px;margin-top:8px;}
+  .person-actions .primary{flex:1;}
+
   table.roster{width:100%;border-collapse:collapse;font-size:12.5px;}
   table.roster th{text-align:left;color:var(--text-faint);font-weight:600;font-size:10.5px;letter-spacing:.03em;padding:4px 6px;border-bottom:1px solid var(--border);}
   table.roster td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle;}
@@ -228,15 +236,19 @@
       </section>
 
       <section class="panel">
-        <h2>직업별 입력</h2>
-        <div class="jobtabs" id="jobTabs"></div>
-        <div class="addform" id="addForm">
-          <input type="text" id="inName" placeholder="닉네임" />
-          <select id="inType"></select>
-          <input type="number" id="inPower" placeholder="전투력" min="1" />
-          <button class="primary small" id="addBtn">추가</button>
+        <h2>사람 등록</h2>
+        <p class="hint">한 사람의 캐릭터(본캐/부캐/배럭)를 한 번에 등록합니다. 종류는 전투력 기준(700↑ 본캐 · 301~699 부캐 · 300↓ 배럭)으로 자동 제안되며, 직접 바꿀 수도 있습니다.</p>
+        <input type="text" id="personName" class="person-name" placeholder="닉네임" />
+        <div id="personRows"></div>
+        <div class="person-actions">
+          <button class="small" id="addRowBtn">+ 캐릭터 줄 추가</button>
+          <button class="primary small" id="registerPersonBtn">등록</button>
         </div>
-        <p class="hint" style="margin-top:-4px">전투력 입력 시 종류가 자동 제안됩니다(700↑ 본캐 · 301~699 부캐 · 300↓ 배럭) — 필요하면 직접 바꾸세요.</p>
+      </section>
+
+      <section class="panel">
+        <h2>직업별 명단</h2>
+        <div class="jobtabs" id="jobTabs"></div>
         <div class="rostwrap">
           <table class="roster" id="jobRoster"></table>
         </div>
@@ -278,10 +290,16 @@
     selected: null,
     showAllRoster: false,
     resetArmed: false,
-    editMode: false
+    editMode: false,
+    personDraft: { name: '', rows: [] }
   };
   var nextId = 1;
   var resetTimer = null;
+  var draftRowId = 1;
+  function newDraftRow(){
+    return { id: draftRowId++, job: JOBS[0].key, power: '', type: null, typeManual: false };
+  }
+  state.personDraft.rows = [newDraftRow()];
 
   function jobColor(job){
     var j = JOBS.find(function(x){return x.key===job;});
@@ -374,20 +392,57 @@
     state.selected = null;
     state.activeJob = JOBS[0].key;
     state.showAllRoster = false;
+    state.personDraft = { name: '', rows: [newDraftRow()] };
     nextId = 1;
     try{ localStorage.removeItem(STORE_KEY); }catch(e){}
     render(); save();
   }
 
   // ---------- mutation ----------
-  function addCharacter(job, name, type, power){
-    name = (name||'').trim();
-    if(!name || !power || power<=0) return false;
-    state.characters.push({id: nextId++, job: job, name: name, type: type, power: Math.round(power)});
+  function addDraftRow(){
+    state.personDraft.rows.push(newDraftRow());
+    render();
+  }
+  function removeDraftRow(rowId){
+    if(state.personDraft.rows.length<=1) return;
+    state.personDraft.rows = state.personDraft.rows.filter(function(r){return r.id!==rowId;});
+    render();
+  }
+  function updateDraftRowJob(rowId, job){
+    var row = state.personDraft.rows.find(function(r){return r.id===rowId;});
+    if(row) row.job = job;
+  }
+  function updateDraftRowPower(rowId, power){
+    var row = state.personDraft.rows.find(function(r){return r.id===rowId;});
+    if(!row) return;
+    row.power = power;
+    if(!row.typeManual){
+      var n = parseFloat(power);
+      row.type = n>0 ? deriveType(n) : null;
+      var typeEl = document.getElementById('draftType-'+rowId);
+      if(typeEl && row.type) typeEl.value = row.type;
+    }
+  }
+  function updateDraftRowType(rowId, type){
+    var row = state.personDraft.rows.find(function(r){return r.id===rowId;});
+    if(row){ row.type = type; row.typeManual = true; }
+  }
+  function registerPerson(){
+    var name = document.getElementById('personName').value.trim();
+    if(!name){ document.getElementById('personName').focus(); return; }
+    var toAdd = [];
+    state.personDraft.rows.forEach(function(row){
+      var power = parseFloat(row.power);
+      if(!power || power<=0) return;
+      toAdd.push({id: nextId++, job: row.job, name: name, type: row.type || deriveType(power), power: Math.round(power)});
+    });
+    if(toAdd.length===0){ return; }
+    state.characters = state.characters.concat(toAdd);
+    state.personDraft = { name: '', rows: [newDraftRow()] };
+    document.getElementById('personName').value = '';
     invalidateParties();
     cleanExcluded();
     render(); save();
-    return true;
   }
   function removeCharacter(id){
     state.characters = state.characters.filter(function(c){return c.id!==id;});
@@ -630,10 +685,20 @@
     });
   }
 
-  function renderAddForm(){
-    var typeSel = document.getElementById('inType');
-    typeSel.innerHTML='';
-    TYPES.forEach(function(t){ typeSel.appendChild(el('option',{value:t},[txt(t)])); });
+  function renderPersonDraft(){
+    var wrap = document.getElementById('personRows');
+    wrap.innerHTML = '';
+    state.personDraft.rows.forEach(function(row){
+      var jobSel = el('select',{id:'draftJob-'+row.id, onchange:function(e){ updateDraftRowJob(row.id, e.target.value); }},
+        JOBS.map(function(j){ return el('option',{value:j.key, selected: row.job===j.key?'selected':null},[txt(j.key)]); })
+      );
+      var powerInput = el('input',{id:'draftPower-'+row.id, type:'number', min:'1', placeholder:'전투력', value: row.power||'', oninput:function(e){ updateDraftRowPower(row.id, e.target.value); }});
+      var typeSel = el('select',{id:'draftType-'+row.id, onchange:function(e){ updateDraftRowType(row.id, e.target.value); }},
+        TYPES.map(function(t){ return el('option',{value:t, selected: row.type===t?'selected':null},[txt(t)]); })
+      );
+      var removeBtn = el('button',{class:'ghost small', type:'button', title:'이 줄 삭제', onclick:function(){ removeDraftRow(row.id); }},[txt('×')]);
+      wrap.appendChild(el('div',{class:'person-row'},[jobSel, powerInput, typeSel, removeBtn]));
+    });
   }
 
   function renderJobRoster(){
@@ -835,34 +900,19 @@
     renderStats();
     renderResetBtn();
     renderJobTabs();
-    renderAddForm();
+    renderPersonDraft();
     renderJobRoster();
     renderAllRoster();
     renderMain();
   }
 
   // ---------- events ----------
-  document.getElementById('addBtn').addEventListener('click', function(){
-    var name = document.getElementById('inName').value;
-    var type = document.getElementById('inType').value;
-    var power = parseFloat(document.getElementById('inPower').value);
-    if(addCharacter(state.activeJob, name, type, power)){
-      document.getElementById('inName').value='';
-      document.getElementById('inPower').value='';
-      document.getElementById('inName').focus();
-    }
-  });
-  document.getElementById('inPower').addEventListener('keydown', function(e){
-    if(e.key==='Enter') document.getElementById('addBtn').click();
-  });
-  document.getElementById('inPower').addEventListener('input', function(e){
-    var power = parseFloat(e.target.value);
-    if(power>0) document.getElementById('inType').value = deriveType(power);
+  document.getElementById('addRowBtn').addEventListener('click', addDraftRow);
+  document.getElementById('registerPersonBtn').addEventListener('click', registerPerson);
+  document.getElementById('personName').addEventListener('keydown', function(e){
+    if(e.key==='Enter') document.getElementById('draftPower-'+state.personDraft.rows[0].id).focus();
   });
   document.getElementById('reclassifyBtn').addEventListener('click', reclassifyAll);
-  document.getElementById('inName').addEventListener('keydown', function(e){
-    if(e.key==='Enter') document.getElementById('addBtn').click();
-  });
   document.getElementById('pasteBtn').addEventListener('click', function(){
     var text = document.getElementById('pasteBox').value;
     if(!text.trim()) return;
