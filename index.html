@@ -104,12 +104,6 @@
 
   .sidebar-sticky{position:sticky;top:16px;display:flex;flex-direction:column;}
 
-  textarea.paste{width:100%;min-height:78px;resize:vertical;background:var(--bg-sunken);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-mono);font-size:12px;padding:8px 10px;}
-  textarea.paste:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
-  .paste-row{display:flex;gap:8px;margin-top:8px;}
-  .paste-msg{font-size:11.5px;margin-top:6px;color:var(--text-muted);}
-  .paste-msg.err{color:var(--danger);}
-
   button{font-family:var(--font-kr);cursor:pointer;border-radius:7px;border:1px solid var(--border-strong);background:var(--bg-elevated);color:var(--text);padding:7px 13px;font-size:13px;font-weight:600;transition:background .12s,border-color .12s,transform .06s;}
   button:hover{border-color:var(--accent);}
   button:active{transform:translateY(1px);}
@@ -134,17 +128,28 @@
   .addform input:focus-visible,.addform select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
   .addform input[type=number]{font-family:var(--font-mono);}
 
-  input.person-name{font-family:var(--font-kr);font-size:13px;font-weight:700;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
-  input.person-name:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
-  .main-row{display:grid;grid-template-columns:1fr 78px 92px;gap:6px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--border);}
-  .main-row select,.main-row input{font-family:var(--font-kr);font-size:12.5px;padding:7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
-  .main-row input[type=number]{font-family:var(--font-mono);}
-  .sub-label{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--text-faint);margin-bottom:6px;}
-  .person-row{display:grid;grid-template-columns:1fr 62px 62px 56px 22px;gap:5px;margin-bottom:6px;align-items:center;}
-  .person-row select,.person-row input{font-family:var(--font-kr);font-size:12px;padding:6px 5px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
+  .main-card{background:var(--bg-sunken);border:1px solid var(--border-strong);border-radius:9px;padding:12px;margin-bottom:16px;}
+  .main-card-label{font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--accent);text-transform:uppercase;margin-bottom:9px;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field + .field{margin-top:8px;}
+  .field label{font-size:10.5px;font-weight:600;color:var(--text-muted);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  .field select,.field input{font-family:var(--font-kr);font-size:13px;padding:8px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text);width:100%;}
+  .field input:focus-visible,.field select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .field input[type=number]{font-family:var(--font-mono);}
+  input.person-name{font-weight:700;}
+
+  .sub-section-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--text-muted);margin:2px 0 8px;}
+  .cnt-badge{font-family:var(--font-mono);font-weight:600;font-size:10px;background:var(--bg-sunken);border:1px solid var(--border);border-radius:20px;padding:1px 8px;color:var(--text-faint);}
+  .rows-head{display:grid;grid-template-columns:1fr 68px 66px 60px 22px;gap:5px;padding:0 2px 5px;}
+  .rows-head span{font-size:9.5px;font-weight:700;letter-spacing:.03em;color:var(--text-faint);text-transform:uppercase;}
+  .person-row{display:grid;grid-template-columns:1fr 68px 66px 60px 22px;gap:5px;margin-bottom:6px;align-items:center;background:var(--bg-sunken);border:1px solid var(--border);border-radius:7px;padding:5px;}
+  .person-row select,.person-row input{font-family:var(--font-kr);font-size:12px;padding:6px 6px;border-radius:5px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text);width:100%;}
   .person-row input[type=number]{font-family:var(--font-mono);}
-  .person-row button.ghost{padding:4px;}
-  .person-actions{display:flex;gap:8px;margin-top:8px;}
+  .person-row input:focus-visible,.person-row select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .person-row button.ghost{padding:4px;color:var(--text-faint);}
+  .person-row button.ghost:hover{color:var(--danger);}
+  .person-actions{display:flex;gap:8px;margin-top:10px;}
   .person-actions .primary{flex:1;}
 
   table.roster{width:100%;border-collapse:collapse;font-size:12.5px;}
@@ -231,26 +236,33 @@
   <div class="layout">
     <div class="sidebar-sticky">
       <section class="panel">
-        <h2>빠른 붙여넣기</h2>
-        <p class="hint">한 줄에 한 캐릭터, <b>직업,닉네임,전투력</b> 또는 <b>직업,닉네임,캐릭터이름,전투력</b> 순서 (쉼표 또는 탭 구분)<br>캐릭터이름을 생략하면 닉네임을 캐릭터이름으로도 씁니다. 여기로 추가되는 캐릭터는 전투력 기준(301↑ 부캐 · 300↓ 배럭)으로 항상 부캐/배럭로만 등록됩니다. 본캐는 "사람 등록"에서 지정하세요.<br>예: 살성,쫄깃,권투사쫄깃,540</p>
-        <textarea class="paste" id="pasteBox" placeholder="살성,쫄깃,권투사쫄깃,540&#10;권성,역마,450&#10;치유성,라공,라공의힐러,280"></textarea>
-        <div class="paste-row">
-          <button class="primary" id="pasteBtn">일괄 추가</button>
-          <button class="small" id="pasteClearBtn">지우기</button>
-        </div>
-        <div class="paste-msg" id="pasteMsg"></div>
-      </section>
-
-      <section class="panel">
         <h2>사람 등록</h2>
-        <p class="hint">닉네임이 곧 그 사람의 본캐 이름입니다. 본캐 직업·전투력을 먼저 입력하고, 부캐/배럭은 아래에서 캐릭터이름·직업·전투력을 한 줄씩 추가하세요.</p>
-        <div class="main-row">
-          <input type="text" id="personName" class="person-name" placeholder="닉네임(=본캐 이름)" />
-          <select id="mainJob"></select>
-          <input type="number" id="mainPower" placeholder="본캐 전투력" min="1" />
+        <p class="hint">닉네임이 곧 그 사람의 본캐 이름입니다. 본캐를 먼저 채우고, 부캐·배럭은 원하는 만큼 줄을 추가하세요.</p>
+
+        <div class="main-card">
+          <div class="main-card-label">본캐</div>
+          <div class="field">
+            <label for="personName">닉네임 (본캐 이름)</label>
+            <input type="text" id="personName" class="person-name" placeholder="예: 쫄깃" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="mainJob">직업</label>
+              <select id="mainJob"></select>
+            </div>
+            <div class="field">
+              <label for="mainPower">전투력</label>
+              <input type="number" id="mainPower" min="1" placeholder="예: 540" />
+            </div>
+          </div>
         </div>
-        <div class="sub-label">부캐 / 배럭</div>
+
+        <div class="sub-section-label">부캐 / 배럭 <span class="cnt-badge" id="subRowCount">0줄</span></div>
+        <div class="rows-head">
+          <span>캐릭터이름</span><span>직업</span><span>전투력</span><span>종류</span><span></span>
+        </div>
         <div id="personRows"></div>
+
         <div class="person-actions">
           <button class="small" id="addRowBtn">+ 캐릭터 줄 추가</button>
           <button class="primary small" id="registerPersonBtn">등록</button>
@@ -473,29 +485,6 @@
     cleanExcluded();
     render(); save();
   }
-  function bulkAdd(text){
-    var lines = text.split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean);
-    var added=0, errs=[];
-    lines.forEach(function(line, i){
-      var parts = line.split(/[,\t]+/).map(function(s){return s.trim();});
-      if(parts.length<3){ parts = line.split(/\s+/).map(function(s){return s.trim();}); }
-      if(parts.length<3){ errs.push((i+1)+'행: 형식 오류'); return; }
-      var job=parts[0], owner=parts[1];
-      var charName = parts.length>=4 ? parts[2] : owner;
-      var power = parseInt(parts.length>=4 ? parts[3] : parts[2], 10);
-      if(JOBKEYS.indexOf(job)===-1){ errs.push((i+1)+'행: 알 수 없는 직업 "'+job+'"'); return; }
-      if(!owner || !charName || !power || power<=0){ errs.push((i+1)+'행: 닉네임/캐릭터이름/전투력 오류'); return; }
-      state.characters.push({id: nextId++, owner:owner, job:job, name:charName, type:deriveSubType(power), power:Math.round(power)});
-      added++;
-    });
-    invalidateParties();
-    cleanExcluded();
-    var msg = added+'명 추가됨';
-    if(errs.length) msg += ' · '+errs.length+'건 오류 ('+errs.slice(0,3).join(', ')+(errs.length>3?' 외':'')+')';
-    save();
-    return {added:added, errs:errs, msg:msg};
-  }
-
   // ---------- exclusion ----------
   function candidatePool(){
     return state.characters.filter(function(c){return c.type==='부캐' && c.job!=='치유성';});
@@ -724,6 +713,8 @@
       var removeBtn = el('button',{class:'ghost small', type:'button', title:'이 줄 삭제', onclick:function(){ removeDraftRow(row.id); }},[txt('×')]);
       wrap.appendChild(el('div',{class:'person-row'},[nameInput, jobSel, powerInput, typeSel, removeBtn]));
     });
+    var countEl = document.getElementById('subRowCount');
+    if(countEl) countEl.textContent = state.personDraft.rows.length+'줄';
   }
 
   function nameCell(c){
@@ -942,23 +933,12 @@
   document.getElementById('addRowBtn').addEventListener('click', addDraftRow);
   document.getElementById('registerPersonBtn').addEventListener('click', registerPerson);
   document.getElementById('personName').addEventListener('keydown', function(e){
-    if(e.key==='Enter') document.getElementById('draftPower-'+state.personDraft.rows[0].id).focus();
+    if(e.key==='Enter'){ e.preventDefault(); document.getElementById('mainJob').focus(); }
+  });
+  document.getElementById('mainPower').addEventListener('keydown', function(e){
+    if(e.key==='Enter'){ e.preventDefault(); registerPerson(); }
   });
   document.getElementById('reclassifyBtn').addEventListener('click', reclassifyAll);
-  document.getElementById('pasteBtn').addEventListener('click', function(){
-    var text = document.getElementById('pasteBox').value;
-    if(!text.trim()) return;
-    var res = bulkAdd(text);
-    var msgEl = document.getElementById('pasteMsg');
-    msgEl.textContent = res.msg;
-    msgEl.className = 'paste-msg'+(res.errs.length?' err':'');
-    if(res.added>0) document.getElementById('pasteBox').value='';
-    render();
-  });
-  document.getElementById('pasteClearBtn').addEventListener('click', function(){
-    document.getElementById('pasteBox').value='';
-    document.getElementById('pasteMsg').textContent='';
-  });
   document.getElementById('toggleAllBtn').addEventListener('click', function(){
     state.showAllRoster = !state.showAllRoster;
     render();
