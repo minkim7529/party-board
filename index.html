@@ -200,6 +200,7 @@
 </style>
 </head>
 <body>
+
 <div class="wrap">
   <header class="top">
     <div class="titleblock">
@@ -465,6 +466,18 @@
   }
   function totalPower(p){ return p.members.reduce(function(s,c){return s+c.power;},0); }
   function healerCountOf(p){ return p.members.filter(function(c){return c.job==='치유성';}).length; }
+  function hasOwner(p, name){ return p.members.some(function(m){ return m.name===name; }); }
+  function ownerDuplicateWarnings(parties){
+    var out = [];
+    parties.forEach(function(p){
+      var seen = {};
+      p.members.forEach(function(m){ seen[m.name] = (seen[m.name]||0)+1; });
+      Object.keys(seen).forEach(function(name){
+        if(seen[name]>1) out.push('PARTY '+String(p.idx+1).padStart(2,'0')+'에 같은 사람("'+name+'")의 캐릭터가 '+seen[name]+'개 들어가 있습니다.');
+      });
+    });
+    return out;
+  }
 
   function generateParties(){
     var pool = state.characters.filter(function(c){return state.excludedIds.indexOf(c.id)===-1;});
@@ -480,49 +493,55 @@
     var others = pool.filter(function(c){return c.job!=='치유성';});
     var H = healers.length;
 
+    function placeInBest(c, filterFn){
+      var eligible = parties.filter(filterFn);
+      if(eligible.length===0) return false;
+      eligible.sort(function(a,b){return totalPower(a)-totalPower(b);});
+      eligible[0].members.push(c);
+      return true;
+    }
+    function failReason(c){
+      var withCapacity = parties.filter(function(p){return p.members.length<10;});
+      if(withCapacity.length===0) return '모든 파티가 가득 찼습니다.';
+      return '같은 사람("'+c.name+'")의 다른 캐릭터가 이미 없는 파티가 없습니다(한 파티엔 한 사람당 캐릭터 1개만).';
+    }
+
     if(H > 2*N){
       warnings.push('치유성 인원('+H+'명)이 파티 최대 허용치('+(2*N)+'명)를 초과했습니다. 치유성 일부를 제외 대상에 포함해주세요.');
     }
     var healersSorted = shuffledSortDesc(healers);
-    for(var i2=0;i2<Math.min(N,H);i2++){
-      var c = healersSorted[i2];
-      var eligible = parties.filter(function(p){return healerCountOf(p)<1;});
-      eligible.sort(function(a,b){return totalPower(a)-totalPower(b);});
-      eligible[0].members.push(c);
-    }
+    var deferred = [];
+
+    healersSorted.slice(0, Math.min(N,H)).forEach(function(c){
+      var ok = placeInBest(c, function(p){ return healerCountOf(p)<1 && !hasOwner(p,c.name); });
+      if(!ok) deferred.push(c);
+    });
     if(H<N){
       var lacking = parties.filter(function(p){return healerCountOf(p)<1;}).map(function(p){return p.idx+1;});
       warnings.push('치유성이 부족하여 '+lacking.join(', ')+'번 파티에 치유성이 배정되지 않았습니다.');
     }
-    for(var i3=N;i3<Math.min(2*N,H);i3++){
-      var c2 = healersSorted[i3];
-      var eligible2 = parties.filter(function(p){return healerCountOf(p)<2;});
-      if(eligible2.length===0) break;
-      eligible2.sort(function(a,b){return totalPower(a)-totalPower(b);});
-      eligible2[0].members.push(c2);
-    }
-    for(var i4=2*N;i4<H;i4++){
-      var c3 = healersSorted[i4];
-      var eligible3 = parties.filter(function(p){return p.members.length<10;});
-      if(eligible3.length===0){ warnings.push('배정 실패: '+c3.name+' (치유성, 전투력 '+c3.power+') — 모든 파티가 가득 찼습니다.'); continue; }
-      eligible3.sort(function(a,b){return totalPower(a)-totalPower(b);});
-      eligible3[0].members.push(c3);
-    }
+
+    healersSorted.slice(Math.min(N,H)).concat(deferred).forEach(function(c){
+      var ok = placeInBest(c, function(p){ return healerCountOf(p)<2 && !hasOwner(p,c.name); });
+      if(!ok){
+        ok = placeInBest(c, function(p){ return p.members.length<10 && !hasOwner(p,c.name); });
+      }
+      if(!ok){
+        warnings.push('배정 실패: '+c.name+' (치유성, 전투력 '+c.power+') — '+failReason(c));
+      }
+    });
 
     var othersSorted = shuffledSortDesc(others);
     othersSorted.forEach(function(c){
-      var eligible = parties.filter(function(p){
-        return p.members.length<10 && !p.members.some(function(m){return m.job===c.job;});
+      var ok = placeInBest(c, function(p){
+        return p.members.length<10 && !hasOwner(p,c.name) && !p.members.some(function(m){return m.job===c.job;});
       });
-      if(eligible.length===0){
-        eligible = parties.filter(function(p){return p.members.length<10;});
+      if(!ok){
+        ok = placeInBest(c, function(p){ return p.members.length<10 && !hasOwner(p,c.name); });
       }
-      if(eligible.length===0){
-        warnings.push('배정 실패: '+c.name+' ('+c.job+', 전투력 '+c.power+') — 모든 파티가 가득 찼습니다.');
-        return;
+      if(!ok){
+        warnings.push('배정 실패: '+c.name+' ('+c.job+', 전투력 '+c.power+') — '+failReason(c));
       }
-      eligible.sort(function(a,b){return totalPower(a)-totalPower(b);});
-      eligible[0].members.push(c);
     });
 
     parties.forEach(function(p){
@@ -672,10 +691,11 @@
     main.innerHTML='';
     var ex = excessCount();
 
-    if(state.warnings && state.warnings.length){
+    var liveWarnings = (state.warnings||[]).concat(state.parties ? ownerDuplicateWarnings(state.parties) : []);
+    if(liveWarnings.length){
       var wb = el('div',{class:'warnbox'},[
         el('b',{},[txt('확인 필요')]),
-        el('ul',{}, state.warnings.map(function(w){ return el('li',{},[txt(w)]); }))
+        el('ul',{}, liveWarnings.map(function(w){ return el('li',{},[txt(w)]); }))
       ]);
       main.appendChild(wb);
     }
