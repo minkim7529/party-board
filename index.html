@@ -232,8 +232,8 @@
     <div class="sidebar-sticky">
       <section class="panel">
         <h2>빠른 붙여넣기</h2>
-        <p class="hint">한 줄에 한 캐릭터, <b>직업,닉네임,전투력</b> 순서 (쉼표 또는 탭 구분)<br>여기로 추가되는 캐릭터는 전투력 기준(301↑ 부캐 · 300↓ 배럭)으로 항상 부캐/배럭로만 등록됩니다. 본캐는 "사람 등록"에서 지정하세요.<br>예: 살성,쫄깃,540</p>
-        <textarea class="paste" id="pasteBox" placeholder="살성,쫄깃,540&#10;권성,역마,450&#10;치유성,라공,280"></textarea>
+        <p class="hint">한 줄에 한 캐릭터, <b>직업,닉네임,전투력</b> 또는 <b>직업,닉네임,캐릭터이름,전투력</b> 순서 (쉼표 또는 탭 구분)<br>캐릭터이름을 생략하면 닉네임을 캐릭터이름으로도 씁니다. 여기로 추가되는 캐릭터는 전투력 기준(301↑ 부캐 · 300↓ 배럭)으로 항상 부캐/배럭로만 등록됩니다. 본캐는 "사람 등록"에서 지정하세요.<br>예: 살성,쫄깃,권투사쫄깃,540</p>
+        <textarea class="paste" id="pasteBox" placeholder="살성,쫄깃,권투사쫄깃,540&#10;권성,역마,450&#10;치유성,라공,라공의힐러,280"></textarea>
         <div class="paste-row">
           <button class="primary" id="pasteBtn">일괄 추가</button>
           <button class="small" id="pasteClearBtn">지우기</button>
@@ -480,11 +480,12 @@
       var parts = line.split(/[,\t]+/).map(function(s){return s.trim();});
       if(parts.length<3){ parts = line.split(/\s+/).map(function(s){return s.trim();}); }
       if(parts.length<3){ errs.push((i+1)+'행: 형식 오류'); return; }
-      var job=parts[0], name=parts[1];
+      var job=parts[0], owner=parts[1];
+      var charName = parts.length>=4 ? parts[2] : owner;
       var power = parseInt(parts.length>=4 ? parts[3] : parts[2], 10);
       if(JOBKEYS.indexOf(job)===-1){ errs.push((i+1)+'행: 알 수 없는 직업 "'+job+'"'); return; }
-      if(!name || !power || power<=0){ errs.push((i+1)+'행: 닉네임/전투력 오류'); return; }
-      state.characters.push({id: nextId++, owner:name, job:job, name:name, type:deriveSubType(power), power:Math.round(power)});
+      if(!owner || !charName || !power || power<=0){ errs.push((i+1)+'행: 닉네임/캐릭터이름/전투력 오류'); return; }
+      state.characters.push({id: nextId++, owner:owner, job:job, name:charName, type:deriveSubType(power), power:Math.round(power)});
       added++;
     });
     invalidateParties();
