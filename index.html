@@ -134,11 +134,16 @@
   .addform input:focus-visible,.addform select:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
   .addform input[type=number]{font-family:var(--font-mono);}
 
-  input.person-name{font-family:var(--font-kr);font-size:13px;font-weight:700;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;margin-bottom:10px;}
+  input.person-name{font-family:var(--font-kr);font-size:13px;font-weight:700;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
   input.person-name:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
-  .person-row{display:grid;grid-template-columns:1fr 84px 74px auto;gap:6px;margin-bottom:6px;align-items:center;}
-  .person-row select,.person-row input{font-family:var(--font-kr);font-size:12.5px;padding:6px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
+  .main-row{display:grid;grid-template-columns:1fr 78px 92px;gap:6px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--border);}
+  .main-row select,.main-row input{font-family:var(--font-kr);font-size:12.5px;padding:7px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
+  .main-row input[type=number]{font-family:var(--font-mono);}
+  .sub-label{font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--text-faint);margin-bottom:6px;}
+  .person-row{display:grid;grid-template-columns:1fr 62px 62px 56px 22px;gap:5px;margin-bottom:6px;align-items:center;}
+  .person-row select,.person-row input{font-family:var(--font-kr);font-size:12px;padding:6px 5px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sunken);color:var(--text);width:100%;}
   .person-row input[type=number]{font-family:var(--font-mono);}
+  .person-row button.ghost{padding:4px;}
   .person-actions{display:flex;gap:8px;margin-top:8px;}
   .person-actions .primary{flex:1;}
 
@@ -148,6 +153,7 @@
   table.roster tr:last-child td{border-bottom:none;}
   table.roster td.pw{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--gold);}
   .typepill{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:var(--bg-sunken);color:var(--text-muted);border:1px solid var(--border);}
+  .owner-sub{font-size:10px;color:var(--text-faint);margin-top:1px;}
   .rostwrap{max-height:260px;overflow-y:auto;overflow-x:auto;}
   .jobdot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex:none;}
   .empty-note{color:var(--text-faint);font-size:12px;padding:14px 4px;text-align:center;}
@@ -226,7 +232,7 @@
     <div class="sidebar-sticky">
       <section class="panel">
         <h2>빠른 붙여넣기</h2>
-        <p class="hint">한 줄에 한 캐릭터, <b>직업,닉네임,전투력</b> 순서 (쉼표 또는 탭 구분)<br>종류(본캐/부캐/배럭)는 전투력 기준으로 자동 판정됩니다: 700↑ 본캐 · 301~699 부캐 · 300↓ 배럭<br>예: 살성,쫄깃,540</p>
+        <p class="hint">한 줄에 한 캐릭터, <b>직업,닉네임,전투력</b> 순서 (쉼표 또는 탭 구분)<br>여기로 추가되는 캐릭터는 전투력 기준(301↑ 부캐 · 300↓ 배럭)으로 항상 부캐/배럭로만 등록됩니다. 본캐는 "사람 등록"에서 지정하세요.<br>예: 살성,쫄깃,540</p>
         <textarea class="paste" id="pasteBox" placeholder="살성,쫄깃,540&#10;권성,역마,450&#10;치유성,라공,280"></textarea>
         <div class="paste-row">
           <button class="primary" id="pasteBtn">일괄 추가</button>
@@ -237,8 +243,13 @@
 
       <section class="panel">
         <h2>사람 등록</h2>
-        <p class="hint">한 사람의 캐릭터(본캐/부캐/배럭)를 한 번에 등록합니다. 종류는 전투력 기준(700↑ 본캐 · 301~699 부캐 · 300↓ 배럭)으로 자동 제안되며, 직접 바꿀 수도 있습니다.</p>
-        <input type="text" id="personName" class="person-name" placeholder="닉네임" />
+        <p class="hint">닉네임이 곧 그 사람의 본캐 이름입니다. 본캐 직업·전투력을 먼저 입력하고, 부캐/배럭은 아래에서 캐릭터이름·직업·전투력을 한 줄씩 추가하세요.</p>
+        <div class="main-row">
+          <input type="text" id="personName" class="person-name" placeholder="닉네임(=본캐 이름)" />
+          <select id="mainJob"></select>
+          <input type="number" id="mainPower" placeholder="본캐 전투력" min="1" />
+        </div>
+        <div class="sub-label">부캐 / 배럭</div>
         <div id="personRows"></div>
         <div class="person-actions">
           <button class="small" id="addRowBtn">+ 캐릭터 줄 추가</button>
@@ -275,7 +286,7 @@
     {key:'호법성', v:'--job-6'}, {key:'수호성', v:'--job-7'}, {key:'궁성', v:'--job-8'}
   ];
   var JOBKEYS = JOBS.map(function(j){return j.key;});
-  var TYPES = ['본캐','부캐','배럭'];
+  var SUB_TYPES = ['부캐','배럭'];
   var TYPE_ORDER = {'본캐':0,'부캐':1,'배럭':2};
   var STORE_KEY = 'party-board-v1';
 
@@ -297,7 +308,10 @@
   var resetTimer = null;
   var draftRowId = 1;
   function newDraftRow(){
-    return { id: draftRowId++, job: JOBS[0].key, power: '', type: null, typeManual: false };
+    return { id: draftRowId++, name: '', job: JOBS[0].key, power: '', type: null, typeManual: false };
+  }
+  function deriveSubType(power){
+    return power >= TYPE_THRESH.subMin ? '부캐' : '배럭';
   }
   state.personDraft.rows = [newDraftRow()];
 
@@ -316,6 +330,10 @@
       state.excludeConfirmed = !!data.excludeConfirmed;
       state.parties = data.parties || null;
       state.warnings = data.warnings || [];
+      state.characters.forEach(function(c){ if(!c.owner) c.owner = c.name; });
+      if(state.parties){
+        state.parties.forEach(function(p){ p.members.forEach(function(m){ if(!m.owner) m.owner = m.name; }); });
+      }
       nextId = data.nextId || (state.characters.reduce(function(m,c){return Math.max(m,c.id);},0)+1);
     }catch(e){}
   }
@@ -349,14 +367,11 @@
     }
   }
 
-  var TYPE_THRESH = { mainMin: 700, subMin: 301 };
-  function deriveType(power){
-    if(power >= TYPE_THRESH.mainMin) return '본캐';
-    if(power >= TYPE_THRESH.subMin) return '부캐';
-    return '배럭';
-  }
+  var TYPE_THRESH = { subMin: 301 };
   function reclassifyAll(){
-    state.characters.forEach(function(c){ c.type = deriveType(c.power); });
+    state.characters.forEach(function(c){
+      if(c.type!=='본캐') c.type = deriveSubType(c.power);
+    });
     invalidateParties();
     cleanExcluded();
     render(); save();
@@ -404,9 +419,13 @@
     render();
   }
   function removeDraftRow(rowId){
-    if(state.personDraft.rows.length<=1) return;
     state.personDraft.rows = state.personDraft.rows.filter(function(r){return r.id!==rowId;});
+    if(state.personDraft.rows.length===0) state.personDraft.rows.push(newDraftRow());
     render();
+  }
+  function updateDraftRowName(rowId, name){
+    var row = state.personDraft.rows.find(function(r){return r.id===rowId;});
+    if(row) row.name = name;
   }
   function updateDraftRowJob(rowId, job){
     var row = state.personDraft.rows.find(function(r){return r.id===rowId;});
@@ -418,7 +437,7 @@
     row.power = power;
     if(!row.typeManual){
       var n = parseFloat(power);
-      row.type = n>0 ? deriveType(n) : null;
+      row.type = n>0 ? deriveSubType(n) : null;
       var typeEl = document.getElementById('draftType-'+rowId);
       if(typeEl && row.type) typeEl.value = row.type;
     }
@@ -429,17 +448,21 @@
   }
   function registerPerson(){
     var name = document.getElementById('personName').value.trim();
+    var mainJob = document.getElementById('mainJob').value;
+    var mainPower = parseFloat(document.getElementById('mainPower').value);
     if(!name){ document.getElementById('personName').focus(); return; }
-    var toAdd = [];
+    if(!mainPower || mainPower<=0){ document.getElementById('mainPower').focus(); return; }
+    var toAdd = [{id: nextId++, owner: name, name: name, job: mainJob, type: '본캐', power: Math.round(mainPower)}];
     state.personDraft.rows.forEach(function(row){
+      var charName = (row.name||'').trim();
       var power = parseFloat(row.power);
-      if(!power || power<=0) return;
-      toAdd.push({id: nextId++, job: row.job, name: name, type: row.type || deriveType(power), power: Math.round(power)});
+      if(!charName || !power || power<=0) return;
+      toAdd.push({id: nextId++, owner: name, name: charName, job: row.job, type: row.type || deriveSubType(power), power: Math.round(power)});
     });
-    if(toAdd.length===0){ return; }
     state.characters = state.characters.concat(toAdd);
     state.personDraft = { name: '', rows: [newDraftRow()] };
     document.getElementById('personName').value = '';
+    document.getElementById('mainPower').value = '';
     invalidateParties();
     cleanExcluded();
     render(); save();
@@ -461,7 +484,7 @@
       var power = parseInt(parts.length>=4 ? parts[3] : parts[2], 10);
       if(JOBKEYS.indexOf(job)===-1){ errs.push((i+1)+'행: 알 수 없는 직업 "'+job+'"'); return; }
       if(!name || !power || power<=0){ errs.push((i+1)+'행: 닉네임/전투력 오류'); return; }
-      state.characters.push({id: nextId++, job:job, name:name, type:deriveType(power), power:Math.round(power)});
+      state.characters.push({id: nextId++, owner:name, job:job, name:name, type:deriveSubType(power), power:Math.round(power)});
       added++;
     });
     invalidateParties();
@@ -521,14 +544,14 @@
   }
   function totalPower(p){ return p.members.reduce(function(s,c){return s+c.power;},0); }
   function healerCountOf(p){ return p.members.filter(function(c){return c.job==='치유성';}).length; }
-  function hasOwner(p, name){ return p.members.some(function(m){ return m.name===name; }); }
+  function hasOwner(p, owner){ return p.members.some(function(m){ return m.owner===owner; }); }
   function ownerDuplicateWarnings(parties){
     var out = [];
     parties.forEach(function(p){
       var seen = {};
-      p.members.forEach(function(m){ seen[m.name] = (seen[m.name]||0)+1; });
-      Object.keys(seen).forEach(function(name){
-        if(seen[name]>1) out.push('PARTY '+String(p.idx+1).padStart(2,'0')+'에 같은 사람("'+name+'")의 캐릭터가 '+seen[name]+'개 들어가 있습니다.');
+      p.members.forEach(function(m){ seen[m.owner] = (seen[m.owner]||0)+1; });
+      Object.keys(seen).forEach(function(owner){
+        if(seen[owner]>1) out.push('PARTY '+String(p.idx+1).padStart(2,'0')+'에 같은 사람("'+owner+'")의 캐릭터가 '+seen[owner]+'개 들어가 있습니다.');
       });
     });
     return out;
@@ -558,7 +581,7 @@
     function failReason(c){
       var withCapacity = parties.filter(function(p){return p.members.length<10;});
       if(withCapacity.length===0) return '모든 파티가 가득 찼습니다.';
-      return '같은 사람("'+c.name+'")의 다른 캐릭터가 이미 없는 파티가 없습니다(한 파티엔 한 사람당 캐릭터 1개만).';
+      return '같은 사람("'+c.owner+'")의 다른 캐릭터가 이미 없는 파티가 없습니다(한 파티엔 한 사람당 캐릭터 1개만).';
     }
 
     if(H > 2*N){
@@ -568,7 +591,7 @@
     var deferred = [];
 
     healersSorted.slice(0, Math.min(N,H)).forEach(function(c){
-      var ok = placeInBest(c, function(p){ return healerCountOf(p)<1 && !hasOwner(p,c.name); });
+      var ok = placeInBest(c, function(p){ return healerCountOf(p)<1 && !hasOwner(p,c.owner); });
       if(!ok) deferred.push(c);
     });
     if(H<N){
@@ -577,25 +600,25 @@
     }
 
     healersSorted.slice(Math.min(N,H)).concat(deferred).forEach(function(c){
-      var ok = placeInBest(c, function(p){ return healerCountOf(p)<2 && !hasOwner(p,c.name); });
+      var ok = placeInBest(c, function(p){ return healerCountOf(p)<2 && !hasOwner(p,c.owner); });
       if(!ok){
-        ok = placeInBest(c, function(p){ return p.members.length<10 && !hasOwner(p,c.name); });
+        ok = placeInBest(c, function(p){ return p.members.length<10 && !hasOwner(p,c.owner); });
       }
       if(!ok){
-        warnings.push('배정 실패: '+c.name+' (치유성, 전투력 '+c.power+') — '+failReason(c));
+        warnings.push('배정 실패: '+c.name+' (소속: '+c.owner+', 치유성, 전투력 '+c.power+') — '+failReason(c));
       }
     });
 
     var othersSorted = shuffledSortDesc(others);
     othersSorted.forEach(function(c){
       var ok = placeInBest(c, function(p){
-        return p.members.length<10 && !hasOwner(p,c.name) && !p.members.some(function(m){return m.job===c.job;});
+        return p.members.length<10 && !hasOwner(p,c.owner) && !p.members.some(function(m){return m.job===c.job;});
       });
       if(!ok){
-        ok = placeInBest(c, function(p){ return p.members.length<10 && !hasOwner(p,c.name); });
+        ok = placeInBest(c, function(p){ return p.members.length<10 && !hasOwner(p,c.owner); });
       }
       if(!ok){
-        warnings.push('배정 실패: '+c.name+' ('+c.job+', 전투력 '+c.power+') — '+failReason(c));
+        warnings.push('배정 실패: '+c.name+' (소속: '+c.owner+', '+c.job+', 전투력 '+c.power+') — '+failReason(c));
       }
     });
 
@@ -689,16 +712,23 @@
     var wrap = document.getElementById('personRows');
     wrap.innerHTML = '';
     state.personDraft.rows.forEach(function(row){
+      var nameInput = el('input',{id:'draftName-'+row.id, type:'text', placeholder:'캐릭터이름', value: row.name||'', oninput:function(e){ updateDraftRowName(row.id, e.target.value); }});
       var jobSel = el('select',{id:'draftJob-'+row.id, onchange:function(e){ updateDraftRowJob(row.id, e.target.value); }},
         JOBS.map(function(j){ return el('option',{value:j.key, selected: row.job===j.key?'selected':null},[txt(j.key)]); })
       );
       var powerInput = el('input',{id:'draftPower-'+row.id, type:'number', min:'1', placeholder:'전투력', value: row.power||'', oninput:function(e){ updateDraftRowPower(row.id, e.target.value); }});
       var typeSel = el('select',{id:'draftType-'+row.id, onchange:function(e){ updateDraftRowType(row.id, e.target.value); }},
-        TYPES.map(function(t){ return el('option',{value:t, selected: row.type===t?'selected':null},[txt(t)]); })
+        SUB_TYPES.map(function(t){ return el('option',{value:t, selected: row.type===t?'selected':null},[txt(t)]); })
       );
       var removeBtn = el('button',{class:'ghost small', type:'button', title:'이 줄 삭제', onclick:function(){ removeDraftRow(row.id); }},[txt('×')]);
-      wrap.appendChild(el('div',{class:'person-row'},[jobSel, powerInput, typeSel, removeBtn]));
+      wrap.appendChild(el('div',{class:'person-row'},[nameInput, jobSel, powerInput, typeSel, removeBtn]));
     });
+  }
+
+  function nameCell(c){
+    var kids = [txt(c.name)];
+    if(c.owner !== c.name) kids.push(el('div',{class:'owner-sub'},[txt(c.owner)]));
+    return el('td',{},kids);
   }
 
   function renderJobRoster(){
@@ -710,12 +740,12 @@
       return;
     }
     var thead = el('tr',{},[
-      el('th',{},[txt('닉네임')]), el('th',{},[txt('종류')]), el('th',{style:'text-align:right'},[txt('전투력')]), el('th',{})
+      el('th',{},[txt('캐릭터')]), el('th',{},[txt('종류')]), el('th',{style:'text-align:right'},[txt('전투력')]), el('th',{})
     ]);
     table.appendChild(thead);
     list.sort(function(a,b){return b.power-a.power;}).forEach(function(c){
       var row = el('tr',{},[
-        el('td',{},[txt(c.name)]),
+        nameCell(c),
         el('td',{},[el('span',{class:'typepill'},[txt(c.type)])]),
         el('td',{class:'pw'},[txt(c.power.toLocaleString())]),
         el('td',{},[el('button',{class:'ghost small', title:'삭제', onclick:function(){ removeCharacter(c.id); }},[txt('삭제')])])
@@ -733,7 +763,7 @@
     wrap.innerHTML='';
     var table = el('table',{class:'roster'});
     table.appendChild(el('tr',{},[
-      el('th',{},[txt('직업')]), el('th',{},[txt('닉네임')]), el('th',{},[txt('종류')]), el('th',{style:'text-align:right'},[txt('전투력')]), el('th',{})
+      el('th',{},[txt('직업')]), el('th',{},[txt('캐릭터')]), el('th',{},[txt('종류')]), el('th',{style:'text-align:right'},[txt('전투력')]), el('th',{})
     ]));
     if(state.characters.length===0){
       table.appendChild(el('tr',{},[el('td',{colspan:'5'},[el('div',{class:'empty-note'},[txt('등록된 캐릭터가 없습니다.')])])]));
@@ -742,7 +772,7 @@
     .forEach(function(c){
       table.appendChild(el('tr',{},[
         el('td',{},[el('span',{class:'jobdot', style:'background:'+jobColor(c.job)}), txt(c.job)]),
-        el('td',{},[txt(c.name)]),
+        nameCell(c),
         el('td',{},[el('span',{class:'typepill'},[txt(c.type)])]),
         el('td',{class:'pw'},[txt(c.power.toLocaleString())]),
         el('td',{},[el('button',{class:'ghost small', onclick:function(){ removeCharacter(c.id); }},[txt('삭제')])])
@@ -785,7 +815,7 @@
           if(!c) return;
           var checked = state.excludedIds.indexOf(id)>-1;
           var disabled = !checked && state.excludedIds.length>=ex;
-          var row = el('label',{class:'excand'+(checked?' checked':'')},[
+          var row = el('label',{class:'excand'+(checked?' checked':''), title: c.owner!==c.name ? ('소속: '+c.owner) : null},[
             el('input',{type:'checkbox', checked: checked?'checked':null, disabled: disabled?'disabled':null, onchange:function(){ toggleExclude(id); }}),
             el('span',{class:'nm'},[txt(c.name)]),
             el('span',{class:'jb'},[txt(c.job)]),
@@ -853,6 +883,7 @@
         p.members.forEach(function(m){
           var li = el('li',{
             class:'member'+(state.selected===m.id?' sel':'')+(state.editMode?' editable':''),
+            title: m.owner!==m.name ? ('소속: '+m.owner) : null,
             draggable: state.editMode ? 'true' : null,
             onclick:function(){ swapMembers(m.id); },
             ondragstart:function(e){
@@ -932,6 +963,9 @@
     render();
   });
   document.getElementById('resetBtn').addEventListener('click', requestReset);
+
+  var mainJobSel = document.getElementById('mainJob');
+  JOBS.forEach(function(j){ mainJobSel.appendChild(el('option',{value:j.key},[txt(j.key)])); });
 
   load();
   cleanExcluded();
